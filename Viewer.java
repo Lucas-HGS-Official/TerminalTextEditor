@@ -9,21 +9,40 @@ import java.lang.classfile.Interfaces;
 
 
 public class Viewer {
-    public static void main(String[] args) throws IOException {
-        IO.println("\033[4;44;31mHello and welcome!\033[0m");
 
+    private static LibC.Termios OGAttr;
+
+    public static void main(String[] args) throws IOException {
+        EnableRawmode();
+
+        while (true) {
+            int key = System.in.read();
+            if (key == 'q') {
+                LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
+                System.exit(0);
+            }
+            System.out.print((char) key + " (" + key + ")\r\n");
+        }
+    }
+
+    private static void EnableRawmode() {
         LibC.Termios termios = new LibC.Termios();
         int rc = LibC.INSTANCE.tcgetattr(LibC.SYSTEM_OUT_FD, termios);
         if (rc != 0) {
             System.err.println("Error calling tcgetattr");
             System.exit(rc);
         }
-        System.out.println("termios = " + termios);
 
-        while (true) {
-            int key = System.in.read();
-            System.out.println((char) key + " (" + key + ")");
-        }
+        OGAttr = LibC.Termios.of(termios);
+
+        termios.c_lflag &= ~(LibC.ECHO | LibC.ICANON | LibC.IEXTEN | LibC.ISIG);
+        termios.c_iflag &= ~(LibC.IXON | LibC.ICRNL);
+        termios.c_oflag &= ~(LibC.OPOST);
+
+        termios.c_cc[LibC.VMIN] = 0;
+        termios.c_cc[LibC.VTIME] = 1;
+
+        LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, termios);
     }
 }
 
