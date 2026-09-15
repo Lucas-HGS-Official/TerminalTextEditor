@@ -11,18 +11,39 @@ import java.lang.classfile.Interfaces;
 public class Viewer {
 
     private static LibC.Termios OGAttr;
+    private static int rows = 10;
+    private static int cols = 10;
+
 
     public static void main(String[] args) throws IOException {
         EnableRawmode();
 
         while (true) {
+            refreshScreen();
             int key = System.in.read();
-            if (key == 'q') {
-                LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
-                System.exit(0);
-            }
-            System.out.print((char) key + " (" + key + ")\r\n");
+            handleKey(key);
         }
+    }
+
+    private static void refreshScreen() {
+        System.out.print("\033[2J");
+        System.out.print("\033[H");
+
+        for (int i = 0; i < rows-1; i++) {
+            System.out.print("~\r\n");
+        }
+        System.out.print("\033[7mCode Editor - v0.0.1 ALPHA\033[0m\n");
+        System.out.print("\033[H");
+    }
+
+    private static void handleKey(int key) {
+        if (key == 'q') {
+            System.out.print("\033[2J");
+            System.out.print("\033[H");
+            LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
+            System.exit(0);
+        }
+        System.out.print((char) key + " (" + key + ")\r\n");
     }
 
     private static void EnableRawmode() {
