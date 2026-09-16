@@ -26,15 +26,22 @@ public class Viewer {
     }
 
     private static void refreshScreen() {
-        System.out.print("\033[2J");
-        System.out.print("\033[H");
+        StringBuilder builder = new StringBuilder();
 
+        builder.append("\033[2J");
+        builder.append("\033[H");
         for (int i = 0; i < rows-1; i++) {
-            System.out.print("~\r\n");
+            builder.append("~\r\n");
         }
         java.lang.String statusMessage = "Code Editor - v0.0.1 ALPHA";
-        System.out.print("\033[7m" + statusMessage + " ".repeat(Math.max(0, cols - statusMessage.length()))+ "\033[0m\n");
-        System.out.print("\033[H");
+        builder.append(new StringBuilder()
+                .append("\033[7m")
+                .append(statusMessage)
+                .append(" ".repeat(Math.max(0, cols - statusMessage.length())))
+                .append("\033[0m\n").toString());
+        builder.append("\033[H");
+
+        System.out.print(builder);
     }
 
     private static void handleKey(int key) {
