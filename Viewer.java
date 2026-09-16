@@ -14,9 +14,9 @@ public class Viewer {
     private static int rows = 10;
     private static int cols = 10;
 
-
     public static void main(String[] args) throws IOException {
         EnableRawmode();
+        initEditor();
 
         while (true) {
             refreshScreen();
@@ -32,7 +32,8 @@ public class Viewer {
         for (int i = 0; i < rows-1; i++) {
             System.out.print("~\r\n");
         }
-        System.out.print("\033[7mCode Editor - v0.0.1 ALPHA\033[0m\n");
+        java.lang.String statusMessage = "Code Editor - v0.0.1 ALPHA";
+        System.out.print("\033[7m" + statusMessage + " ".repeat(Math.max(0, cols - statusMessage.length()))+ "\033[0m\n");
         System.out.print("\033[H");
     }
 
@@ -65,6 +66,24 @@ public class Viewer {
 
         LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, termios);
     }
+
+    private static LibC.Winsize getWindowSize() {
+        final LibC.Winsize winsize = new LibC.Winsize();
+
+        final int rc = LibC.INSTANCE.ioctl(LibC.SYSTEM_OUT_FD, LibC.TIOCGWINSZ, winsize);
+        if (rc != 0) {
+            System.err.println("ioctl failed with return code[={}]" + rc);
+            System.exit(1);
+        }
+
+        return winsize;
+    }
+
+    private static void initEditor() {
+        LibC.Winsize windowSize = getWindowSize();
+        rows = windowSize.ws_row;
+        cols = windowSize.ws_col;
+    }
 }
 
 
@@ -75,6 +94,11 @@ interface LibC extends Library {
             IXON = 2000, ICRNL = 400, IEXTEN = 100000, OPOST = 1, VMIN = 6, VTIME = 5, TIOCGWINSZ = 0x5413;
 
     LibC INSTANCE = Native.load("c", LibC.class);
+
+    @Structure.FieldOrder(value = {"ws_row", "ws_col", "ws_xpixel", "ws_ypixel"})
+    class Winsize extends Structure {
+        public short ws_row, ws_col, ws_xpixel, ws_ypixel;
+    }
 
     @Structure.FieldOrder(value = {"c_iflag", "c_oflag", "c_cflag", "c_lflag", "c_cc"})
     class Termios extends Structure {
@@ -99,4 +123,6 @@ interface LibC extends Library {
     int tcgetattr(int fd, Termios termios);
 
     int tcsetattr(int fd, int optional_actions, Termios termios);
+
+    int ioctl(int fd, int opt, Winsize winsize);
 }
