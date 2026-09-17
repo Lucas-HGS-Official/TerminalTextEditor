@@ -10,6 +10,16 @@ import java.lang.classfile.Interfaces;
 
 public class Viewer {
 
+    private static final int ARROW_UP = 1000,
+            ARROW_DOWN = 1001,
+            ARROW_RIGHT = 1002,
+            ARROW_LEFT = 1003,
+            HOME = 1004,
+            DEL = 1005,
+            END = 1006,
+            PAGE_UP = 1007,
+            PAGE_DOWN = 1008;
+
     private static LibC.Termios OGAttr;
     private static int rows = 10;
     private static int cols = 10;
@@ -19,10 +29,67 @@ public class Viewer {
         initEditor();
 
         while (true) {
-            refreshScreen();
-            int key = System.in.read();
+//            refreshScreen();
+            int key = readKey();
             handleKey(key);
         }
+    }
+
+    private static int readKey() throws IOException {
+        int key = System.in.read();
+        if (key != '\033') { return key; }
+        int secondKey = System.in.read();
+        if (secondKey != '[' && secondKey != 'O') { return secondKey; }
+        int thirdKey = System.in.read();
+        if (secondKey == '[') {
+            return switch (thirdKey) {
+                case 'A' -> ARROW_UP;
+//                return ARROW_UP;
+//                break;
+                case 'B' -> ARROW_DOWN;
+//                return ;
+//                break;
+                case 'C' -> ARROW_RIGHT;
+                case 'D' -> ARROW_LEFT;
+                case 'H' -> HOME;
+                case 'F' -> END;
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
+                    int fourthKey = System.in.read();
+                    if (fourthKey != '~') {
+                        yield fourthKey;
+                    }
+                    switch (thirdKey) {
+                        case '1':
+                        case '7':
+                            yield HOME;
+                        case '3':
+                            yield DEL;
+                        case '4':
+                        case '8':
+                            yield END;
+                        case '5':
+                            yield PAGE_UP;
+                        case '6':
+                            yield PAGE_DOWN;
+                        default:
+                            yield thirdKey;
+                    }
+                }
+                default -> thirdKey;
+            };
+        } else {
+            return switch (thirdKey) {
+                case 'H' -> HOME;
+                case 'F' -> END;
+                default -> thirdKey;
+            }
+        }
+//        if (thirdKey == 'A') {  }
+//        else if (thirdKey == 'B') { return ; }
+//        else if (thirdKey == 'C') { return ARROW_UP; }
+//        else if (thirdKey == 'B') { return ARROW_DOWN; }
+
+        return key;
     }
 
     private static void refreshScreen() {
@@ -50,8 +117,9 @@ public class Viewer {
             System.out.print("\033[H");
             LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
             System.exit(0);
+        } else {
+            System.out.print((char) key + " -> (" + key + ")\r\n");
         }
-        System.out.print((char) key + " (" + key + ")\r\n");
     }
 
     private static void EnableRawmode() {
