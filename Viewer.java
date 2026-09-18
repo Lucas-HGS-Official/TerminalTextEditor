@@ -44,11 +44,7 @@ public class Viewer {
         if (secondKey == '[') {
             return switch (thirdKey) {
                 case 'A' -> ARROW_UP;
-//                return ARROW_UP;
-//                break;
                 case 'B' -> ARROW_DOWN;
-//                return ;
-//                break;
                 case 'C' -> ARROW_RIGHT;
                 case 'D' -> ARROW_LEFT;
                 case 'H' -> HOME;
@@ -84,10 +80,6 @@ public class Viewer {
                 default -> thirdKey;
             }
         }
-//        if (thirdKey == 'A') {  }
-//        else if (thirdKey == 'B') { return ; }
-//        else if (thirdKey == 'C') { return ARROW_UP; }
-//        else if (thirdKey == 'B') { return ARROW_DOWN; }
 
         return key;
     }
