@@ -111,7 +111,7 @@ public class Viewer {
     }
 
     private static void handleKey(int key) {
-        if (key == 'q') {
+        if (key == 'q' || key == 'Q') {
             System.out.print("\033[2J");
             System.out.print("\033[H");
             LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
