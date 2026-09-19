@@ -5,7 +5,12 @@ import com.sun.jna.Native;
 import com.sun.jna.Structure;
 
 import java.io.IOException;
-import java.lang.classfile.Interfaces;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
 
 
 public class Viewer {
@@ -24,12 +29,16 @@ public class Viewer {
     private static int rows = 10;
     private static int cols = 10;
 
+    private static int cursorx = 0;
+    private static int cursory = 0;
+
+
     public static void main(String[] args) throws IOException {
         EnableRawmode();
         initEditor();
 
         while (true) {
-//            refreshScreen();
+            refreshScreen();
             int key = readKey();
             handleKey(key);
         }
@@ -78,10 +87,8 @@ public class Viewer {
                 case 'H' -> HOME;
                 case 'F' -> END;
                 default -> thirdKey;
-            }
+            };
         }
-
-        return key;
     }
 
     private static void refreshScreen() {
@@ -98,7 +105,7 @@ public class Viewer {
                 .append(statusMessage)
                 .append(" ".repeat(Math.max(0, cols - statusMessage.length())))
                 .append("\033[0m\n").toString());
-        builder.append("\033[H");
+        builder.append(String.format("\033[%d;%dH", cursory+1, cursorx+1));
 
         System.out.print(builder);
     }
@@ -109,8 +116,27 @@ public class Viewer {
             System.out.print("\033[H");
             LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
             System.exit(0);
-        } else {
-            System.out.print((char) key + " -> (" + key + ")\r\n");
+        } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME).contains(key)) {
+            moveCursor(key);
+        }
+    }
+
+    private static void moveCursor(int key) {
+        switch (key) {
+            case ARROW_UP -> {
+                if (cursory > 0) { cursory--; }
+            }
+            case ARROW_DOWN -> {
+                if (cursory < rows-1) { cursory ++; }
+            }
+            case ARROW_LEFT -> {
+                if (cursorx > 0) { cursorx--; }
+            }
+            case ARROW_RIGHT -> {
+                if (cursorx < cols-1) { cursorx++; }
+            }
+            case HOME -> cursorx = 0;
+            case END -> cursorx = cols-1;
         }
     }
 
