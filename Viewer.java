@@ -1,4 +1,6 @@
 // java -cp jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java
+// java -cp lib/jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java
+
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -32,8 +34,21 @@ public class Viewer {
     private static int cursorx = 0;
     private static int cursory = 0;
 
+    List<String> content = List.of();
+
 
     public static void main(String[] args) throws IOException {
+
+        if (args.length == 1) {
+            String filename = args[0];
+            Path path = Path.of(filename);
+
+            if (Files.exists(path)) {
+                try (Stream<String> stream = Files.lines(path)) {
+                    // content = stream.toList();
+                }
+            }
+        }
         EnableRawmode();
         initEditor();
 
