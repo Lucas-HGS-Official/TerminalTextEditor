@@ -112,10 +112,14 @@ public class Viewer {
     private static void refreshScreen() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("\033[2J");
         builder.append("\033[H");
         for (int i = 0; i < rows-1; i++) {
-            builder.append("~\r\n");
+            if (i >= content.size()) {
+                builder.append("~");
+            } else {
+                builder.append(content.get(i));
+            }
+            builder.append("\033[K\r\n");
         }
         java.lang.String statusMessage = "Code Editor - v0.0.1 ALPHA";
         builder.append(new StringBuilder()
