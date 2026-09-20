@@ -9,9 +9,7 @@ import com.sun.jna.Structure;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Stream;
 
 
@@ -34,21 +32,12 @@ public class Viewer {
     private static int cursorx = 0;
     private static int cursory = 0;
 
-    List<String> content = List.of();
+    private static List<String> content = List.of();
 
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length == 1) {
-            String filename = args[0];
-            Path path = Path.of(filename);
-
-            if (Files.exists(path)) {
-                try (Stream<String> stream = Files.lines(path)) {
-                    // content = stream.toList();
-                }
-            }
-        }
+        openFile(args);
         EnableRawmode();
         initEditor();
 
@@ -56,6 +45,20 @@ public class Viewer {
             refreshScreen();
             int key = readKey();
             handleKey(key);
+        }
+    }
+    private static void openFile(String[] args) {
+        if (args.length == 1) {
+            String filename = args[0];
+            Path path = Path.of(filename);
+
+            if (Files.exists(path)) {
+                try (Stream<String> stream = Files.lines(path)) {
+                    content = stream.toList();
+                } catch (IOException e) {
+                    // throw new RuntimeErrorException(e);
+                }
+            }
         }
     }
 
