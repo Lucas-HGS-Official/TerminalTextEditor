@@ -1,4 +1,3 @@
-// java -cp jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java
 // java -cp lib/jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java
 
 
@@ -112,7 +111,15 @@ public class Viewer {
     private static void refreshScreen() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("\033[H");
+        builder.append("\033[H"); // moves cursor to top left
+        drawContent(builder);
+        drawStatus(builder);
+        builder.append(String.format("\033[%d;%dH", cursory, cursorx+1)); // draws cursor to the correct position
+
+        System.out.print(builder);
+    }
+
+    private static void drawContent(StringBuilder builder) {
         for (int i = 0; i < rows-1; i++) {
             if (i >= content.size()) {
                 builder.append("~");
@@ -121,15 +128,14 @@ public class Viewer {
             }
             builder.append("\033[K\r\n");
         }
+    }
+    private static void drawStatus(StringBuilder builder) {
         java.lang.String statusMessage = "Code Editor - v0.0.1 ALPHA";
         builder.append(new StringBuilder()
                 .append("\033[7m")
                 .append(statusMessage)
                 .append(" ".repeat(Math.max(0, cols - statusMessage.length())))
                 .append("\033[0m\n").toString());
-        builder.append(String.format("\033[%d;%dH", cursory+1, cursorx+1));
-
-        System.out.print(builder);
     }
 
     private static void handleKey(int key) {
@@ -149,7 +155,7 @@ public class Viewer {
                 if (cursory > 0) { cursory--; }
             }
             case ARROW_DOWN -> {
-                if (cursory < rows-1) { cursory ++; }
+                if (cursory < rows-1) { cursory++; }
             }
             case ARROW_LEFT -> {
                 if (cursorx > 0) { cursorx--; }
@@ -196,7 +202,7 @@ public class Viewer {
 
     private static void initEditor() {
         LibC.Winsize windowSize = getWindowSize();
-        rows = windowSize.ws_row;
+        rows = windowSize.ws_row-1;
         cols = windowSize.ws_col;
     }
 }
