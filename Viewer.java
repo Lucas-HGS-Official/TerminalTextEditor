@@ -1,4 +1,4 @@
-// java -cp lib/jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java
+// java -cp lib/jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java LICENSE-2.0.txt
 
 
 import com.sun.jna.Library;
@@ -25,11 +25,9 @@ public class Viewer {
             PAGE_DOWN = 1008;
 
     private static LibC.Termios OGAttr;
-    private static int rows = 10;
-    private static int cols = 10;
 
-    private static int cursorx = 0;
-    private static int cursory = 0;
+    private static int rows = 10, cols = 10;
+    private static int cursorx = 0, cursory = 0, offsety = 0;
 
     private static List<String> content = List.of();
 
@@ -41,6 +39,7 @@ public class Viewer {
         initEditor();
 
         while (true) {
+            scrolling();
             refreshScreen();
             int key = readKey();
             handleKey(key);
@@ -58,6 +57,14 @@ public class Viewer {
                     // throw new RuntimeErrorException(e);
                 }
             }
+        }
+    }
+
+    private static void scrolling() {
+        if (cursory >= rows + offsety) {
+            offsety = cursory - rows + 1;
+        } else if (cursory < offsety) {
+            offsety = cursory;
         }
     }
 
@@ -114,17 +121,18 @@ public class Viewer {
         builder.append("\033[H"); // moves cursor to top left
         drawContent(builder);
         drawStatus(builder);
-        builder.append(String.format("\033[%d;%dH", cursory, cursorx+1)); // draws cursor to the correct position
+        builder.append(String.format("\033[%d;%dH", cursory - offsety, cursorx+1)); // draws cursor to the correct position
 
         System.out.print(builder);
     }
 
     private static void drawContent(StringBuilder builder) {
         for (int i = 0; i < rows-1; i++) {
-            if (i >= content.size()) {
+            int fileI = offsety + i;
+            if (fileI >= content.size()) {
                 builder.append("~");
             } else {
-                builder.append(content.get(i));
+                builder.append(content.get(fileI));
             }
             builder.append("\033[K\r\n");
         }
@@ -155,7 +163,7 @@ public class Viewer {
                 if (cursory > 0) { cursory--; }
             }
             case ARROW_DOWN -> {
-                if (cursory < rows-1) { cursory++; }
+                if (cursory < content.size()) { cursory++; }
             }
             case ARROW_LEFT -> {
                 if (cursorx > 0) { cursorx--; }
