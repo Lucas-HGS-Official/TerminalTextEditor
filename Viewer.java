@@ -50,12 +50,12 @@ public class Viewer {
             String filename = args[0];
             Path path = Path.of(filename);
 
-            if (Files.exists(path)) {
-                try (Stream<String> stream = Files.lines(path)) {
-                    content = stream.toList();
-                } catch (IOException e) {
-                    // throw new RuntimeErrorException(e);
-                }
+            if (!Files.exists(path)) { return; }
+
+            try (Stream<String> stream = Files.lines(path)) {
+                content = stream.toList();
+            } catch (IOException e) {
+                // throw new RuntimeErrorException(e);
             }
         }
     }
