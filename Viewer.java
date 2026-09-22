@@ -130,7 +130,7 @@ public class Viewer {
         }
     }
     private static void drawStatus(StringBuilder builder) {
-        java.lang.String statusMessage = "Code Editor - v0.0.1 ALPHA";
+        java.lang.String statusMessage = "Rows: " + (rows-1) + " X: " + cursorx + " Y: " + cursory;
         builder.append(new StringBuilder()
                 .append("\033[7m")
                 .append(statusMessage)
