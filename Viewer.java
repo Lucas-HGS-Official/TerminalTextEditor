@@ -152,7 +152,7 @@ public class Viewer {
             System.out.print("\033[H");
             LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
             System.exit(0);
-        } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME).contains(key)) {
+        } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME, PAGE_DOWN, PAGE_UP).contains(key)) {
             moveCursor(key);
         }
     }
@@ -171,9 +171,25 @@ public class Viewer {
             case ARROW_RIGHT -> {
                 if (cursorx < cols-1) { cursorx++; }
             }
+            case PAGE_DOWN, PAGE_UP -> {
+                if (key == PAGE_DOWN) {
+                    moveCursorToBottom();
+                } else {
+                    moveCursorToTop();
+                }
+                for (int i=0; i<rows-1; i++) {
+                    moveCursor(key == PAGE_DOWN? ARROW_DOWN : ARROW_UP);
+                }
+            }
             case HOME -> cursorx = 0;
             case END -> cursorx = cols-1;
         }
+    }
+    private static void moveCursorToBottom() {
+        cursory = offsety + rows-1;
+    }
+    private static void moveCursorToTop() {
+        cursory = offsety;
     }
 
     private static void EnableRawmode() {
@@ -214,6 +230,7 @@ public class Viewer {
         cols = windowSize.ws_col;
     }
 }
+
 
 
 interface LibC extends Library {
