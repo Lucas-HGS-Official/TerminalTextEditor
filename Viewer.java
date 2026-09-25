@@ -1,4 +1,4 @@
-// java -cp lib/jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java LOREM_IPSUM.txt
+// java -cp lib/jna-5.19.1.jar --enable-native-access=ALL-UNNAMED Viewer.java big.txt
 
 
 import com.sun.jna.Library;
@@ -127,13 +127,13 @@ public class Viewer {
         builder.append("\033[H"); // moves cursor to top left
         drawContent(builder);
         drawStatus(builder);
-        builder.append(String.format("\033[%d;%dH", cursory - offsety, cursorx - offsetx + 1)); // draws cursor to the correct position
+        builder.append(String.format("\033[%d;%dH", cursory - offsety + 1, cursorx - offsetx + 1)); // draws cursor to the correct position
 
         System.out.print(builder);
     }
 
     private static void drawContent(StringBuilder builder) {
-        for (int i = 0; i < rows-1; i++) {
+        for (int i = 0; i < rows; i++) {
             int fileI = offsety + i;
             if (fileI >= content.size()) {
                 builder.append("~");
@@ -150,19 +150,17 @@ public class Viewer {
                 if (lenToDraw > 0) {
                     builder.append(line, offsetx, offsetx + lenToDraw);
                 }
-
-                builder.append(line);
             }
             builder.append("\033[K\r\n");
         }
     }
     private static void drawStatus(StringBuilder builder) {
-        java.lang.String statusMessage = "Rows: " + (rows-1) + " X: " + cursorx + " Y: " + cursory;
+        java.lang.String statusMessage = "Rows: " + (rows) + " X: " + cursorx + " Y: " + cursory;
         builder.append(new StringBuilder()
                 .append("\033[7m")
                 .append(statusMessage)
                 .append(" ".repeat(Math.max(0, cols - statusMessage.length())))
-                .append("\033[0m\n").toString());
+                .append("\033[0m").toString());
     }
 
     private static void handleKey(int key) {
@@ -196,7 +194,7 @@ public class Viewer {
                 } else {
                     moveCursorToTop();
                 }
-                for (int i=0; i<rows-1; i++) {
+                for (int i=0; i<rows; i++) {
                     moveCursor(key == PAGE_DOWN? ARROW_DOWN : ARROW_UP);
                 }
             }
@@ -205,7 +203,8 @@ public class Viewer {
         }
     }
     private static void moveCursorToBottom() {
-        cursory = offsety + rows-1;
+        cursory = offsety + rows;
+        if (cursory > content.size()) { cursory = content.size(); }
     }
     private static void moveCursorToTop() {
         cursory = offsety;
