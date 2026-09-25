@@ -180,7 +180,7 @@ public class Viewer {
                 if (cursory > 0) { cursory--; }
             }
             case ARROW_DOWN -> {
-                if (cursory < content.size()) { cursory++; }
+                if (cursory < content.size()-1) { cursory++; }
             }
             case ARROW_LEFT -> {
                 if (cursorx > 0) { cursorx--; }
@@ -203,7 +203,7 @@ public class Viewer {
         }
     }
     private static void moveCursorToBottom() {
-        cursory = offsety + rows;
+        cursory = offsety + rows-1;
         if (cursory > content.size()) { cursory = content.size(); }
     }
     private static void moveCursorToTop() {
