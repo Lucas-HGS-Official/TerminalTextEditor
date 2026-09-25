@@ -175,6 +175,10 @@ public class Viewer {
     }
 
     private static void moveCursor(int key) {
+        String line = getCurrentLine();
+        if (line == null) {
+            line = "";
+        }
         switch (key) {
             case ARROW_UP -> {
                 if (cursory > 0) { cursory--; }
@@ -186,7 +190,7 @@ public class Viewer {
                 if (cursorx > 0) { cursorx--; }
             }
             case ARROW_RIGHT -> {
-                if (cursorx < content.get(cursory).length() - 1) { cursorx++; }
+                if (cursorx < line.length()) { cursorx++; }
             }
             case PAGE_DOWN, PAGE_UP -> {
                 if (key == PAGE_DOWN) {
@@ -199,9 +203,19 @@ public class Viewer {
                 }
             }
             case HOME -> cursorx = 0;
-            case END -> cursorx = cols-1;
+            case END -> cursorx = line.length();
+        }
+
+        line = getCurrentLine();
+        if (cursorx > line.length()) {
+            cursorx = line.length();
         }
     }
+
+    private static String getCurrentLine() {
+        return cursory < content.size() ? content.get(cursory) : null;
+    }
+
     private static void moveCursorToBottom() {
         cursory = offsety + rows-1;
         if (cursory > content.size()) { cursory = content.size(); }
