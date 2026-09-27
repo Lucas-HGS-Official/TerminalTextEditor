@@ -24,7 +24,6 @@ public class Viewer {
             PAGE_UP = 1007,
             PAGE_DOWN = 1008;
 
-    private static LibC.Termios OGAttr;
 
     private static int rows = 10, cols = 10;
     private static int cursorx = 0, offsetx = 0, cursory = 0, offsety = 0;
@@ -167,7 +166,7 @@ public class Viewer {
         if (key == 'q' || key == 'Q') {
             System.out.print("\033[2J");
             System.out.print("\033[H");
-            LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
+            disableRawMode();
             System.exit(0);
         } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME, PAGE_DOWN, PAGE_UP).contains(key)) {
             moveCursor(key);
@@ -224,7 +223,29 @@ public class Viewer {
         cursory = offsety;
     }
 
-    private static void EnableRawmode() {
+    private static void initEditor() {
+        LibC.Winsize windowSize = getWindowSize();
+        rows = windowSize.ws_row-1;
+        cols = windowSize.ws_col;
+    }
+}
+
+interface Terminal {
+    void EnableRawmode();
+    void disableRawMode();
+    WindowSize getWindowSize();
+}
+
+
+record WindowSize(int rows, int cols) {
+
+}
+
+class UnixTerminal implements Terminal {
+    private static LibC.Termios OGAttr;
+
+    @Override
+    public void EnableRawmode() {
         LibC.Termios termios = new LibC.Termios();
         int rc = LibC.INSTANCE.tcgetattr(LibC.SYSTEM_OUT_FD, termios);
         if (rc != 0) {
@@ -244,7 +265,13 @@ public class Viewer {
         LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, termios);
     }
 
-    private static LibC.Winsize getWindowSize() {
+    @Override
+    public void disableRawMode() {
+        LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
+    }
+
+    @Override
+    public WindowSize getWindowSize() {
         final LibC.Winsize winsize = new LibC.Winsize();
 
         final int rc = LibC.INSTANCE.ioctl(LibC.SYSTEM_OUT_FD, LibC.TIOCGWINSZ, winsize);
@@ -253,54 +280,46 @@ public class Viewer {
             System.exit(1);
         }
 
-        return winsize;
+        return new WindowSize(winsize.ws_row, winsize.ws_col);
     }
 
-    private static void initEditor() {
-        LibC.Winsize windowSize = getWindowSize();
-        rows = windowSize.ws_row-1;
-        cols = windowSize.ws_col;
-    }
-}
+    interface LibC extends Library {
 
+        int SYSTEM_OUT_FD = 0;
+        int ISIG = 1, ICANON = 2, ECHO = 10, TCSAFLUSH = 2,
+                IXON = 2000, ICRNL = 400, IEXTEN = 100000, OPOST = 1, VMIN = 6, VTIME = 5, TIOCGWINSZ = 0x5413;
 
+        LibC INSTANCE = Native.load("c", LibC.class);
 
-interface LibC extends Library {
-
-    int SYSTEM_OUT_FD = 0;
-    int ISIG = 1, ICANON = 2, ECHO = 10, TCSAFLUSH = 2,
-            IXON = 2000, ICRNL = 400, IEXTEN = 100000, OPOST = 1, VMIN = 6, VTIME = 5, TIOCGWINSZ = 0x5413;
-
-    LibC INSTANCE = Native.load("c", LibC.class);
-
-    @Structure.FieldOrder(value = {"ws_row", "ws_col", "ws_xpixel", "ws_ypixel"})
-    class Winsize extends Structure {
-        public short ws_row, ws_col, ws_xpixel, ws_ypixel;
-    }
-
-    @Structure.FieldOrder(value = {"c_iflag", "c_oflag", "c_cflag", "c_lflag", "c_cc"})
-    class Termios extends Structure {
-        public int c_iflag, c_oflag, c_cflag, c_lflag;
-        public byte[]  c_cc = new byte[19];
-
-        public Termios() {
+        @Structure.FieldOrder(value = {"ws_row", "ws_col", "ws_xpixel", "ws_ypixel"})
+        class Winsize extends Structure {
+            public short ws_row, ws_col, ws_xpixel, ws_ypixel;
         }
 
-        public static Termios of (Termios t) {
-            Termios copy = new Termios();
-            copy.c_cc = t.c_cc.clone();
-            copy.c_oflag = t.c_oflag;
-            copy.c_iflag = t.c_iflag;
-            copy.c_cflag = t.c_cflag;
-            copy.c_lflag = t.c_lflag;
+        @Structure.FieldOrder(value = {"c_iflag", "c_oflag", "c_cflag", "c_lflag", "c_cc"})
+        class Termios extends Structure {
+            public int c_iflag, c_oflag, c_cflag, c_lflag;
+            public byte[]  c_cc = new byte[19];
 
-            return copy;
+            public Termios() {
+            }
+
+            public static Termios of (Termios t) {
+                Termios copy = new Termios();
+                copy.c_cc = t.c_cc.clone();
+                copy.c_oflag = t.c_oflag;
+                copy.c_iflag = t.c_iflag;
+                copy.c_cflag = t.c_cflag;
+                copy.c_lflag = t.c_lflag;
+
+                return copy;
+            }
         }
+
+        int tcgetattr(int fd, Termios termios);
+
+        int tcsetattr(int fd, int optional_actions, Termios termios);
+
+        int ioctl(int fd, int opt, Winsize winsize);
     }
-
-    int tcgetattr(int fd, Termios termios);
-
-    int tcsetattr(int fd, int optional_actions, Termios termios);
-
-    int ioctl(int fd, int opt, Winsize winsize);
 }
