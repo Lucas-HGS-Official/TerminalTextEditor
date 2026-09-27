@@ -3,6 +3,7 @@
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import com.sun.jna.Platform;
 import com.sun.jna.Structure;
 
 import java.io.IOException;
@@ -30,11 +31,13 @@ public class Viewer {
 
     private static List<String> content = List.of();
 
+    private static Terminal terminal = Platform.isMac() ? new MacOsTerminal() : new UnixTerminal();
+
 
     public static void main(String[] args) throws IOException {
 
         openFile(args);
-        EnableRawmode();
+        terminal.EnableRawmode();
         initEditor();
 
         while (true) {
@@ -166,7 +169,7 @@ public class Viewer {
         if (key == 'q' || key == 'Q') {
             System.out.print("\033[2J");
             System.out.print("\033[H");
-            disableRawMode();
+            terminal.disableRawMode();
             System.exit(0);
         } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME, PAGE_DOWN, PAGE_UP).contains(key)) {
             moveCursor(key);
@@ -224,9 +227,9 @@ public class Viewer {
     }
 
     private static void initEditor() {
-        LibC.Winsize windowSize = getWindowSize();
-        rows = windowSize.ws_row-1;
-        cols = windowSize.ws_col;
+        WindowSize windowSize = terminal.getWindowSize();
+        rows = windowSize.rows()-1;
+        cols = windowSize.cols();
     }
 }
 
@@ -299,6 +302,89 @@ class UnixTerminal implements Terminal {
         @Structure.FieldOrder(value = {"c_iflag", "c_oflag", "c_cflag", "c_lflag", "c_cc"})
         class Termios extends Structure {
             public int c_iflag, c_oflag, c_cflag, c_lflag;
+            public byte[]  c_cc = new byte[19];
+
+            public Termios() {
+            }
+
+            public static Termios of (Termios t) {
+                Termios copy = new Termios();
+                copy.c_cc = t.c_cc.clone();
+                copy.c_oflag = t.c_oflag;
+                copy.c_iflag = t.c_iflag;
+                copy.c_cflag = t.c_cflag;
+                copy.c_lflag = t.c_lflag;
+
+                return copy;
+            }
+        }
+
+        int tcgetattr(int fd, Termios termios);
+
+        int tcsetattr(int fd, int optional_actions, Termios termios);
+
+        int ioctl(int fd, int opt, Winsize winsize);
+    }
+}
+
+class MacOsTerminal implements Terminal {
+    private static LibC.Termios OGAttr;
+
+    @Override
+    public void EnableRawmode() {
+        LibC.Termios termios = new LibC.Termios();
+        int rc = LibC.INSTANCE.tcgetattr(LibC.SYSTEM_OUT_FD, termios);
+        if (rc != 0) {
+            System.err.println("Error calling tcgetattr");
+            System.exit(rc);
+        }
+
+        OGAttr = LibC.Termios.of(termios);
+
+        termios.c_lflag &= ~(LibC.ECHO | LibC.ICANON | LibC.IEXTEN | LibC.ISIG);
+        termios.c_iflag &= ~(LibC.IXON | LibC.ICRNL);
+        termios.c_oflag &= ~(LibC.OPOST);
+
+        termios.c_cc[LibC.VMIN] = 0;
+        termios.c_cc[LibC.VTIME] = 1;
+
+        LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, termios);
+    }
+
+    @Override
+    public void disableRawMode() {
+        LibC.INSTANCE.tcsetattr(LibC.SYSTEM_OUT_FD, LibC.TCSAFLUSH, OGAttr);
+    }
+
+    @Override
+    public WindowSize getWindowSize() {
+        final LibC.Winsize winsize = new LibC.Winsize();
+
+        final int rc = LibC.INSTANCE.ioctl(LibC.SYSTEM_OUT_FD, LibC.TIOCGWINSZ, winsize);
+        if (rc != 0) {
+            System.err.println("ioctl failed with return code[={}]" + rc);
+            System.exit(1);
+        }
+
+        return new WindowSize(winsize.ws_row, winsize.ws_col);
+    }
+
+    interface LibC extends Library {
+
+        int SYSTEM_OUT_FD = 0;
+        int ISIG = 1, ICANON = 2, ECHO = 10, TCSAFLUSH = 2,
+                IXON = 2000, ICRNL = 400, IEXTEN = 100000, OPOST = 1, VMIN = 6, VTIME = 5, TIOCGWINSZ = 0x40087468;
+
+        LibC INSTANCE = Native.load("c", LibC.class);
+
+        @Structure.FieldOrder(value = {"ws_row", "ws_col", "ws_xpixel", "ws_ypixel"})
+        class Winsize extends Structure {
+            public short ws_row, ws_col, ws_xpixel, ws_ypixel;
+        }
+
+        @Structure.FieldOrder(value = {"c_iflag", "c_oflag", "c_cflag", "c_lflag", "c_cc"})
+        class Termios extends Structure {
+            public long c_iflag, c_oflag, c_cflag, c_lflag;
             public byte[]  c_cc = new byte[19];
 
             public Termios() {
