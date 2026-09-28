@@ -30,7 +30,12 @@ public class Viewer {
 
     private static List<String> content = List.of();
 
-    private static Terminal terminal = Platform.isMac() ? new MacOsTerminal() : new UnixTerminal();
+    private static Terminal terminal =
+    Platform.isWindows() ?
+        new WindowsTerminal() :
+        Platform.isMac() ?
+            new MacOsTerminal() :
+            new UnixTerminal();
 
 
     public static void main(String[] args) throws IOException {
