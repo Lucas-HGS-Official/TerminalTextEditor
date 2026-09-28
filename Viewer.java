@@ -170,7 +170,7 @@ public class Viewer {
     }
 
     private static void handleKey(int key) {
-        if (key == 'q' || key == 'Q') {
+        if (key == ctrl('q')) {
             System.out.print("\033[2J");
             System.out.print("\033[H");
             terminal.disableRawMode();
@@ -178,6 +178,10 @@ public class Viewer {
         } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME, PAGE_DOWN, PAGE_UP).contains(key)) {
             moveCursor(key);
         }
+    }
+
+    private static int ctrl(char key) {
+        return key & 0x1f;
     }
 
     private static void moveCursor(int key) {
