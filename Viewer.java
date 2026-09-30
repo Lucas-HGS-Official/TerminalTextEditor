@@ -30,6 +30,8 @@ public class Viewer {
 
     private static List<String> content = List.of();
 
+    static String statusMessage;
+
     private static Terminal terminal =
     Platform.isWindows() ?
         new WindowsTerminal() :
@@ -161,12 +163,16 @@ public class Viewer {
         }
     }
     private static void drawStatus(StringBuilder builder) {
-        java.lang.String statusMessage = "Rows: " + (rows) + " X: " + cursorx + " Y: " + cursory;
+        String message = statusMessage != null ? statusMessage : "Rows: " + (rows) + " X: " + cursorx + " Y: " + cursory;
         builder.append(new StringBuilder()
                 .append("\033[7m")
-                .append(statusMessage)
-                .append(" ".repeat(Math.max(0, cols - statusMessage.length())))
+                .append(message)
+                .append(" ".repeat(Math.max(0, cols - message.length())))
                 .append("\033[0m").toString());
+    }
+
+    public static void setStatusMessage(String statusMessage) {
+        Viewer.statusMessage = statusMessage;
     }
 
     private static void handleKey(int key) {
@@ -175,9 +181,19 @@ public class Viewer {
             System.out.print("\033[H");
             terminal.disableRawMode();
             System.exit(0);
+        } else if (key == ctrl('f')) {
+            editorSearch();
         } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME, PAGE_DOWN, PAGE_UP).contains(key)) {
             moveCursor(key);
         }
+    }
+
+    private static void editorSearch() {
+        promptUser("Search %s (ESC/Arrows/Enter)");
+    }
+
+    private static void promptUser(String message) {
+        setStatusMessage(message);
     }
 
     private static int ctrl(char key) {
