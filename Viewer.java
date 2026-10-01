@@ -47,7 +47,6 @@ public class Viewer {
         initEditor();
 
         while (true) {
-            scrolling();
             refreshScreen();
             int key = readKey();
             handleKey(key);
@@ -130,6 +129,8 @@ public class Viewer {
     }
 
     private static void refreshScreen() {
+        scrolling();
+
         StringBuilder builder = new StringBuilder();
 
         builder.append("\033[H"); // moves cursor to top left
