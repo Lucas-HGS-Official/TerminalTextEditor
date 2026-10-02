@@ -195,6 +195,15 @@ public class Viewer {
 
     private static void promptUser(String message) {
         setStatusMessage(message);
+
+        while (true) {
+            try {
+                refreshScreen();
+                int key = readKey();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private static int ctrl(char key) {
