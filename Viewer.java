@@ -194,12 +194,19 @@ public class Viewer {
     }
 
     private static void promptUser(String message) {
-        setStatusMessage(message);
+        StringBuilder input = new StringBuilder();
+        // input.append("test");
 
         while (true) {
             try {
+                setStatusMessage(!input.isEmpty() ? input.toString() : message);
                 refreshScreen();
                 int key = readKey();
+                if (key == '\033' || key == '\r') {
+                    setStatusMessage(null);
+                    return;
+                }
+                input.append((char) key);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
