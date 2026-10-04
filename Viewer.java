@@ -20,6 +20,7 @@ public class Viewer {
             ARROW_LEFT = 1003,
             HOME = 1004,
             DEL = 1005,
+            BACKSPACE = 127,
             END = 1006,
             PAGE_UP = 1007,
             PAGE_DOWN = 1008;
@@ -195,7 +196,6 @@ public class Viewer {
 
     private static void promptUser(String message) {
         StringBuilder input = new StringBuilder();
-        // input.append("test");
 
         while (true) {
             try {
@@ -205,8 +205,13 @@ public class Viewer {
                 if (key == '\033' || key == '\r') {
                     setStatusMessage(null);
                     return;
+                } else if (key == DEL || key == BACKSPACE || key == ctrl('h')) {
+                    if (!input.isEmpty()) {
+                        input.deleteCharAt(input.length() -1);
+                    }
+                } else if (!Character.isISOControl(key) && key < 128) {
+                    input.append((char) key);
                 }
-                input.append((char) key);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
