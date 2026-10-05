@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 
@@ -191,10 +192,21 @@ public class Viewer {
     }
 
     private static void editorSearch() {
-        promptUser("Search %s (ESC/Arrows/Enter)");
+        promptUser("Search %s (ESC/Arrows/Enter)", (query, keyPressed) -> {
+            for (int i=0; i<content.size(); i++) {
+                String line = content.get(i);
+                int match = line.indexOf(query);
+                if (match != -1) {
+                    cursory = i;
+                    cursorx = match;
+                    offsety = content.size();
+                    break;
+                }
+            }
+        });
     }
 
-    private static void promptUser(String message) {
+    private static void promptUser(String message, BiConsumer<String, Integer> consumer) {
         StringBuilder input = new StringBuilder();
 
         while (true) {
@@ -212,6 +224,7 @@ public class Viewer {
                 } else if (!Character.isISOControl(key) && key < 128) {
                     input.append((char) key);
                 }
+                consumer.accept(input.toString(), key);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
