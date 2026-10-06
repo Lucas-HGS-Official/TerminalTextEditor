@@ -191,13 +191,45 @@ public class Viewer {
         }
     }
 
+    enum SearchDir {
+        FORWARD, BAKCWARD,
+    }
+
+    static SearchDir searchDir = SearchDir.FORWARD;
+
+    static int lastMatch = -1;
+
     private static void editorSearch() {
         promptUser("Search %s (ESC/Arrows/Enter)", (query, keyPressed) -> {
+            if (query == null || query.isBlank()) {
+                searchDir = SearchDir.FORWARD;
+                lastMatch = -1;
+                return;
+            }
+            if (keyPressed == ARROW_LEFT || keyPressed == ARROW_UP) {
+                searchDir = SearchDir.BAKCWARD;
+            } else if (keyPressed == ARROW_RIGHT || keyPressed == ARROW_DOWN) {
+                searchDir = SearchDir.FORWARD;
+            } else {
+                searchDir = SearchDir.FORWARD;
+                lastMatch = -1;
+            }
+
+            int currentI = lastMatch;
             for (int i=0; i<content.size(); i++) {
-                String line = content.get(i);
+                currentI += searchDir == SearchDir.FORWARD? 1 : -1;
+
+                if (currentI == content.size()) {
+                    currentI = 0;
+                } else if (currentI == -1) {
+                    currentI = content.size()-1;
+                }
+
+                String line = content.get(currentI);
                 int match = line.indexOf(query);
                 if (match != -1) {
-                    cursory = i;
+                    lastMatch = currentI;
+                    cursory = currentI;
                     cursorx = match;
                     offsety = content.size();
                     break;
