@@ -8,6 +8,7 @@ import com.sun.jna.win32.StdCallLibrary;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
@@ -30,7 +31,7 @@ public class Viewer {
     private static int rows = 10, cols = 10;
     private static int cursorx = 0, offsetx = 0, cursory = 0, offsety = 0;
 
-    private static List<String> content = List.of();
+    private static List<String> content = new ArrayList<>();
 
     static String statusMessage;
 
@@ -188,7 +189,13 @@ public class Viewer {
             editorSearch();
         } else if (List.of(ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, END, HOME, PAGE_DOWN, PAGE_UP).contains(key)) {
             moveCursor(key);
+        } else {
+            insertChar((char)key);
         }
+    }
+
+    private static void insertChar(char key) {
+
     }
 
     enum SearchDir {
